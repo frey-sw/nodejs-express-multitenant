@@ -1,0 +1,7 @@
+# Excluding files and folders
+node_modules
+.dockerignore
+Dockerfile*
+.gitignore
+docker-compose*
+sample.env

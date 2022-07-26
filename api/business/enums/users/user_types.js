@@ -1,0 +1,4 @@
+module.exports = {
+  ADMINISTRADOR: "ADMINISTRADOR",
+  USUARIO: "USUARIO",
+};

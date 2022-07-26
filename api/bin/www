@@ -1,0 +1,110 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+require('dotenv').config();
+const http = require('http');
+const debug = require('debug')('api:server');
+const app = require('../app');
+const { defaultConn } = require('../knexfile');
+let stoppable = require('stoppable');
+let server = stoppable(http.Server(app),0);
+
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+const normalizePort = (val) => {
+  const port = parseInt(val, 10);
+
+  if (Number.isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+};
+
+/**
+ * Get port from environment and store in Express.
+*/
+
+const port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+const onError = (error) => {
+
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+  case 'EACCES':
+    console.error(`${bind}, requires elevated privileges`);
+    process.exit(1);
+    break;
+  case 'EADDRINUSE':
+    console.error(`${bind}, is already in use`);
+    process.exit(1);
+    break;
+  default:
+    throw error;
+  }
+};
+
+
+ const runMigrations = async () => {
+  try {
+    await defaultConn.migrate.latest();
+    await defaultConn.seed.run();
+    debug('Migrations runned successfully');
+  } catch (error) {
+    console.error(`Error running migrations! ${error}`);
+  }
+};
+
+
+const onListening = () => {
+  runMigrations();
+  const addr = server.address();
+  const bind = typeof addr === 'string' ? `pipe ${addr}` : `port ${addr.port}`;
+  debug(`Listening on ${bind}`);
+};
+
+
+let shutdown = () => {
+  debug('starting stoppable');
+  server.stop(); // this might take a while depending on connections
+  debug('exiting');
+  process.exit();
+};
+
+process.on('SIGINT', () => {
+  debug('Got SIGINT (aka ctrl-c in docker). Graceful shutdown ', new Date().toISOString());
+  shutdown();
+});
+
+// quit properly on docker stop
+process.on('SIGTERM', () => {
+  debug('Got SIGTERM (docker container stop). Graceful shutdown ', new Date().toISOString());
+  shutdown();
+});
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+

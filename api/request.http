@@ -1,0 +1,24 @@
+GET http://textum.dev.local/api/health/liveness
+
+###
+
+POST https://api.textum.uy/api/loginBackoffice
+Origin: https://backoffice.textum.uy
+Content-Type: application/json
+
+{
+    "ci": 123456789,
+    "password": "Test123"
+}
+
+
+###
+
+POST https://api.textum.uy/api/login
+Origin: https://textum.uy
+Content-Type: application/json
+
+{
+    "ci": 987654321,
+    "password": "Test123"
+}
